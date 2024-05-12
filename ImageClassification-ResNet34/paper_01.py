@@ -9,8 +9,9 @@ import tensorflow as tf
 
 # from tensorflow.keras.optimizers import Adam
         # tf.keras.optimizers.Adam
-from keras.preprocessing.image import ImageDataGenerator
+from tensorflow.preprocessing.image import ImageDataGenerator
         # tf.keras.preprocessing.image.ImageDataGenerator
+
 
 # print(tf.__version__)
 

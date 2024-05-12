@@ -1,4 +1,5 @@
 /dataset/
 /.idea/
-Pipfile
-Pipfile.lock
+/result
+/model_checkpoint
+
