@@ -5,7 +5,7 @@
 # @File    : __init__.py.py
 
 
-from ModelPara import LEARNINGRATE
+from Src.Model.ModelPara import LEARNINGRATE_1
 
-from ResNet34 import ResNet34
-from ResNet18 import ResNet18
+from Src.Model.ResNet34 import ResNet34
+from Src.Model.ResNet18 import ResNet18

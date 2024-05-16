@@ -4,10 +4,10 @@
 # @Author  : name
 # @File    : ResNet18.py
 
-from ResNet import ResNet
+from Src.Model.ResNet import ResNet
 import tensorflow as tf
 
-from ModelPara import LEARNINGRATE_1
+from Src.Model.ModelPara import LEARNINGRATE_1
 
 ResNet18 = ResNet([2, 2, 2, 2])
 ResNet18.compile(

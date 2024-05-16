@@ -9,7 +9,7 @@ import tensorflow as tf
 def ImTest():
     try:
         print(tf.__version__)
-        print("PASS")
+        print("ImTestResult: PASS")
     except:
-        print("FAILED")
+        print("ImTestResult: FAILED")
 

@@ -4,4 +4,5 @@
 # @Author  : name
 # @File    : __init__.py.py
 
-from config import *
+from Src.Train.config import *
+from Src.Train.run import ModelFit

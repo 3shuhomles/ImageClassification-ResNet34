@@ -42,9 +42,9 @@ def LRTest():
             optimizer.apply_gradients(grads_and_vars=zip(grads, variables))
         # print(a)
         # print(b)
-        print("PASS")
+        print("LRTestResult: PASS")
     except:
-        print("FAILED")
+        print("LRTestResult: FAILED")
 
 
 
