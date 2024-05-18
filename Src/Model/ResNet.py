@@ -8,9 +8,9 @@ import tensorflow as tf
 from tensorflow.python.keras.layers import Conv2D,Activation, MaxPool2D, Dropout, Flatten, Dense
 from keras import Model
 from keras.layers.normalization.batch_normalization import BatchNormalization
-
+# tf.keras.models
 # 构建ResNetBlock的class
-class ResnetBlock(Model):
+class ResnetBlock(tf.keras.Model):
     def __init__(self, filters, strides=1, residual_path=False):
         super(ResnetBlock, self).__init__()
         self.filters = filters
@@ -56,7 +56,7 @@ class ResnetBlock(Model):
         return output
 
 
-class ResNet(Model):
+class ResNet(tf.keras.Model):
     def __init__(self, block_list, initial_filters=64):  # block_list表示每个block有几个卷积层
         super(ResNet, self).__init__()
         self.num_blocks = len(block_list)  # 共有几个block
