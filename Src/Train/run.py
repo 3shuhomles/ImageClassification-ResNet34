@@ -4,9 +4,12 @@
 # @Author  : name
 # @File    : run.py
 
-import tensorflow as tf
+
 import Src.PathConfig as config
 import Src.Model.ResNet34 as Res34
+import Src.Model.ModelPara as ModelPara
+
+import tensorflow as tf
 import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
@@ -17,11 +20,11 @@ train_BatchDataset = tf.keras.utils.image_dataset_from_directory(
     config.TrainDataPath,
     labels='inferred',
     label_mode='categorical',
-    batch_size=5,
+    batch_size=8,
     image_size=(128,128),
-    # shuffle=True,
-    seed = 1635,  # 随机种子 between 0 and 2**32-1
     shuffle=True,
+    seed = ModelPara.SEED,  # 随机种子 between 0 and 2**32-1
+    # shuffle=False,
     subset='both',
     validation_split=0.1,    # 十折交叉验证
 
@@ -41,13 +44,15 @@ train_BatchDataset = tf.keras.utils.image_dataset_from_directory(
 plt.rcParams["font.sans-serif"] = "SimHei"
 plt.rcParams['axes.unicode_minus'] = False
 
-def ModelFit(EPOCHES,ModelName = "UndefinedModel",MODEL = Res34,TrainData = train_BatchDataset,SaveCheckpoint = False,SaveFigure = False,SaveModel = False):
+def ModelFit(EPOCHES,ModelName = "UndefinedModel",MODEL = Res34,TrainData = train_BatchDataset,SaveFigure = False,SaveModel = False,SaveModelFormat = "h5",SaveWeightsOnly = True):
     if(pathlib.Path(str(config.ResultSavePath) + f"\\{ModelName}").exists()):
         print("ModelName is exists")
+        return
     else:
         pathlib.Path(str(config.ResultSavePath) + f"\\{ModelName}").mkdir()
 
-    if(SaveCheckpoint == False):
+
+    if(SaveModel == False):
         history = MODEL.fit(
             TrainData[0],
             validation_data = TrainData[1],
@@ -59,18 +64,48 @@ def ModelFit(EPOCHES,ModelName = "UndefinedModel",MODEL = Res34,TrainData = trai
 
         )
     else:
-        CheckpointSavePath = str(config.ResultSavePath) +"\\" +ModelName + "\\" + f"{ModelName}-{EPOCHES}.ckpt"
-        cp_callback = tf.keras.callbacks.ModelCheckpoint(filepath=CheckpointSavePath,
-                                                         monitor='val_categorical_accuracy',
-                                                         mode='max'
-                                                         )
+        if(SaveModelFormat == "h5"):
+            CheckpointSavePath = str(config.ResultSavePath) + f"\\{ModelName}" + "\\" + "{epoch:02d}-{val_categorical_accuracy:.2f}.h5"
+            if(SaveWeightsOnly == True):
+                cp_callback = tf.keras.callbacks.ModelCheckpoint(filepath=CheckpointSavePath,
+                                                                 monitor='val_categorical_accuracy',
+                                                                 mode='max',
+                                                                 save_weights_only=True
+                                                                 )
+            else:
+                    print("NotImplementedError: Saving the model to HDF5 format requires the model to be a Functional model or a Sequential model.")
+                    return
+        elif(SaveModelFormat == "ckpt"):
+            CheckpointSavePath = str(config.ResultSavePath) + f"\\{ModelName}" + "\\" + "{epoch:02d}-{val_categorical_accuracy:.2f}.ckpt"
+            if (SaveWeightsOnly == True):
+                cp_callback = tf.keras.callbacks.ModelCheckpoint(filepath=CheckpointSavePath,
+                                                                 monitor='val_categorical_accuracy',
+                                                                 mode='max',
+                                                                 save_weights_only=True
+                                                                 )
+            else:
+                cp_callback = tf.keras.callbacks.ModelCheckpoint(filepath=CheckpointSavePath,
+                                                                 monitor='val_categorical_accuracy',
+                                                                 mode='max',
+                                                                 save_weights_only=False
+                                                                 )
+        else:
+            print("Model save format error")
+            return
+
+        # CheckpointSavePath = str(config.ResultSavePath) +"\\" +ModelName + "\\" + "{epoch:02d}-{val_categorical_accuracy:.2f}.ckpt"
+        # cp_callback = tf.keras.callbacks.ModelCheckpoint(filepath=CheckpointSavePath,
+        #                                                  monitor='val_categorical_accuracy',
+        #                                                  mode='max',
+        #                                                  save_weights_only=True
+        #                                                  )
         history = MODEL.fit(
             TrainData[0],
             validation_data=TrainData[1],
             steps_per_epoch=None,
             epochs=EPOCHES,
             verbose=1,
-            validation_split=0.1,
+            # validation_split=0.1,
             validation_freq=1,
             callbacks=[cp_callback],
             workers=4
@@ -83,7 +118,7 @@ def ModelFit(EPOCHES,ModelName = "UndefinedModel",MODEL = Res34,TrainData = trai
         pltsave_str = str(config.ResultSavePath) + "\\" +ModelName + "\\Loss_and_Accuracy.png"
         pltsave_str_2 = str(config.ResultSavePath) + "\\" +ModelName + "\\Val_Loss_and_Accuracy.png"
         '''history曲线'''
-        pd.DataFrame(history.history).plot(figsize=(10, 5))
+        # pd.DataFrame(history.history).plot(figsize=(10, 5))
         # plt.grid(True)
         # plt.gca().set_ylim(0, 1.2)
         # plt.xlabel("迭代次数")
@@ -103,8 +138,6 @@ def ModelFit(EPOCHES,ModelName = "UndefinedModel",MODEL = Res34,TrainData = trai
         val_accuracy = history.history["val_categorical_accuracy"]
         x = range(1, EPOCHES + 1, 1)
 
-
-
         fig = plt.figure(figsize=(10,5))
         ax = fig.add_subplot(111)
         ax.plot(x,loss,'-',color='#FF0000',label = "Loss")
@@ -120,15 +153,4 @@ def ModelFit(EPOCHES,ModelName = "UndefinedModel",MODEL = Res34,TrainData = trai
 
         plt.savefig(fname=pltsave_str)
         plt.show()
-
-
-
-
-    if(SaveModel == True):
-        save_str = str(config.ResultSavePath) + "\\" +ModelName + f"Model.h5"
-        '''保存模型'''
-        MODEL.save(save_str)
-        # NotImplementedError: Saving the model to HDF5 format requires the model to be a Functional model or a Sequential model. It does not work for subclassed models, because such models are defined via the body of a Python method, which isn't safely serializable. Consider saving to the Tensorflow SavedModel format (by setting save_format="tf") or using `save_weights`.
-        print('Model保存成功')
-
 

@@ -1,7 +1,6 @@
 /dataset/
 /.idea/
 /result
-/model_checkpoint
 /backup
 /test01.py
 /test02.py
