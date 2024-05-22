@@ -128,29 +128,26 @@ def ModelFit(EPOCHES,ModelName = "UndefinedModel",MODEL = Res34,TrainData = trai
         # plt.show()
 
         loss = history.history["loss"]
-        print(history.history)
-        print(type(history.history))
-        print(history.history["loss"])
-        print(type(history.history["loss"]))
-        print(history.history.keys)
         accuracy = history.history["categorical_accuracy"]
         val_loss = history.history["val_loss"]
         val_accuracy = history.history["val_categorical_accuracy"]
         x = range(1, EPOCHES + 1, 1)
 
-        fig = plt.figure(figsize=(10,5))
-        ax = fig.add_subplot(111)
+        fig, ax = plt.subplots(figsize=(10,5))
+        # fig = plt.figure(figsize=(10,5))
+        # ax = fig.add_subplot(111)
         ax.plot(x,loss,'-',color='#FF0000',label = "Loss")
+        ax.plot(x, val_loss, '-', color='#FFA500', label="Val_Loss")
         ax2=ax.twinx()
-        ax.plot(x, val_loss, '-',color='#FFA500', label="Val_Loss")
         ax2.plot(x,accuracy,'-',color='blue',label = "Accuracy")
         ax2.plot(x, val_accuracy, '-',color='green', label="Val_Accuracy")
-        plt.legend()
 
         ax.set_xlabel("epoch")
         ax.set_ylabel("Loss")
         ax2.set_ylabel("Accuracy")
 
-        plt.savefig(fname=pltsave_str)
+        fig.legend(loc=(0.5,0),ncol=4)
+
+        plt.savefig(fname=pltsave_str,bbox_inches='tight')
         plt.show()
 
