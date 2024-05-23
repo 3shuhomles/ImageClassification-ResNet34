@@ -11,7 +11,8 @@ if __name__ =="__main__":
     #test.LRTest()
 
     # ModelName = "Res34_TrainData100"
-    Train.ModelFit(ModelName = "Res34_TrainData100",EPOCHES = ModelPara.EPOCHES,SaveFigure = True,SaveModel=True,SaveModelFormat="h5",SaveWeightsOnly=True)
+    Train.ModelFit(ModelName = "UndefinedModel",EPOCHES = ModelPara.EPOCHES,SaveFigure = True,SaveModel=True,SaveModelFormat="h5",SaveWeightsOnly=True)
     # ModelName = f"ResNet34_30_{LEARNINGRATE_1}"
+
 
 

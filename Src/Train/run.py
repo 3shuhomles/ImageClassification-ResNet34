@@ -10,10 +10,9 @@ import Src.Model.ResNet34 as Res34
 import Src.Model.ModelPara as ModelPara
 
 import tensorflow as tf
-import numpy as np
-import pandas as pd
 from matplotlib import pyplot as plt
 import pathlib
+import pandas as pd
 
 '''训练集'''
 train_BatchDataset = tf.keras.utils.image_dataset_from_directory(
@@ -32,6 +31,19 @@ train_BatchDataset = tf.keras.utils.image_dataset_from_directory(
     # subset='training',
     # validation_split=0.1
 )
+
+'''测试集'''
+test_BatchDataset = tf.keras.utils.image_dataset_from_directory(
+        config.TestDataPath,
+        labels='inferred',
+        label_mode='categorical',
+        batch_size=8,
+        image_size=(128, 128)
+    )
+
+class_name = ['beach','circularfarmland','cloud',
+              'desert','forest','mountain',
+              'rectangularfarmland','residential','river','snowberg']
 # print(train_BatchDataset)
 # print(type(train_BatchDataset))
 # print(type(train_BatchDataset[0]))
@@ -51,9 +63,7 @@ def ModelFit(EPOCHES,ModelName = "UndefinedModel",MODEL = Res34,TrainData = trai
     else:
         pathlib.Path(str(config.ResultSavePath) + f"\\{ModelName}").mkdir()
 
-
-    if(SaveModel == False):
-        history = MODEL.fit(
+    history = MODEL.fit(
             TrainData[0],
             validation_data = TrainData[1],
             steps_per_epoch=None,
@@ -61,58 +71,96 @@ def ModelFit(EPOCHES,ModelName = "UndefinedModel",MODEL = Res34,TrainData = trai
             verbose=1,
             validation_freq=1,
             workers=4,
-
         )
-    else:
-        if(SaveModelFormat == "h5"):
-            CheckpointSavePath = str(config.ResultSavePath) + f"\\{ModelName}" + "\\" + "{epoch:02d}-{val_categorical_accuracy:.2f}.h5"
-            if(SaveWeightsOnly == True):
-                cp_callback = tf.keras.callbacks.ModelCheckpoint(filepath=CheckpointSavePath,
-                                                                 monitor='val_categorical_accuracy',
-                                                                 mode='max',
-                                                                 save_weights_only=True
-                                                                 )
-            else:
-                    print("NotImplementedError: Saving the model to HDF5 format requires the model to be a Functional model or a Sequential model.")
-                    return
-        elif(SaveModelFormat == "ckpt"):
-            CheckpointSavePath = str(config.ResultSavePath) + f"\\{ModelName}" + "\\" + "{epoch:02d}-{val_categorical_accuracy:.2f}.ckpt"
-            if (SaveWeightsOnly == True):
-                cp_callback = tf.keras.callbacks.ModelCheckpoint(filepath=CheckpointSavePath,
-                                                                 monitor='val_categorical_accuracy',
-                                                                 mode='max',
-                                                                 save_weights_only=True
-                                                                 )
-            else:
-                cp_callback = tf.keras.callbacks.ModelCheckpoint(filepath=CheckpointSavePath,
-                                                                 monitor='val_categorical_accuracy',
-                                                                 mode='max',
-                                                                 save_weights_only=False
-                                                                 )
-        else:
-            print("Model save format error")
-            return
 
-        # CheckpointSavePath = str(config.ResultSavePath) +"\\" +ModelName + "\\" + "{epoch:02d}-{val_categorical_accuracy:.2f}.ckpt"
-        # cp_callback = tf.keras.callbacks.ModelCheckpoint(filepath=CheckpointSavePath,
-        #                                                  monitor='val_categorical_accuracy',
-        #                                                  mode='max',
-        #                                                  save_weights_only=True
-        #                                                  )
-        history = MODEL.fit(
-            TrainData[0],
-            validation_data=TrainData[1],
-            steps_per_epoch=None,
-            epochs=EPOCHES,
-            verbose=1,
-            # validation_split=0.1,
-            validation_freq=1,
-            callbacks=[cp_callback],
-            workers=4
-        )
-    # ValueError: `validation_split` is only supported for Tensors or NumPy arrays, found following types in the input: [<class 'tensorflow.python.data.ops.dataset_ops.BatchDataset'>]
+    SavePath = str(config.ResultSavePath) + f"\\{ModelName}" + "\\" + "Model.ckpt"
+    MODEL.save(SavePath)
 
-    MODEL.summary()
+    result = MODEL.predict(test_BatchDataset, workers=4, use_multiprocessing=True)
+
+    # 提取真实标签
+    true_labels = tf.concat([y for x, y in test_BatchDataset], axis=0)
+    print(true_labels)
+    print(type(true_labels))
+    # 将预测结果转换为类别标签
+    predicted_labels = tf.argmax(result, axis=1)
+    print(predicted_labels)
+    print(type(predicted_labels))
+
+    # print(result)
+    # print(type(result))
+    # print('ndarray的维度: ', result.ndim)
+    # print('ndarray的形状: ', result.shape)
+    # print('ndarray的元素数量: ', result.size)
+    # print('ndarray中的数据类型: ', result.dtype)
+    # for i in range(0,18000,1):
+    #     index = result[i].argmax()
+    #     print(class_name[index])
+
+
+    # if(SaveModel == False):
+    #     history = MODEL.fit(
+    #         TrainData[0],
+    #         validation_data = TrainData[1],
+    #         steps_per_epoch=None,
+    #         epochs=EPOCHES,
+    #         verbose=1,
+    #         validation_freq=1,
+    #         workers=4,
+    #
+    #     )
+    # else:
+    #     if(SaveModelFormat == "h5"):
+    #         CheckpointSavePath = str(config.ResultSavePath) + f"\\{ModelName}" + "\\" + "{epoch:02d}-{val_categorical_accuracy:.2f}.h5"
+    #         if(SaveWeightsOnly == True):
+    #             cp_callback = tf.keras.callbacks.ModelCheckpoint(filepath=CheckpointSavePath,
+    #                                                              monitor='val_categorical_accuracy',
+    #                                                              mode='max',
+    #                                                              save_weights_only=True
+    #                                                              )
+    #         else:
+    #                 print("NotImplementedError: Saving the model to HDF5 format requires the model to be a Functional model or a Sequential model.")
+    #                 return
+    #     elif(SaveModelFormat == "ckpt"):
+    #         CheckpointSavePath = str(config.ResultSavePath) + f"\\{ModelName}" + "\\" + "{epoch:02d}-{val_categorical_accuracy:.2f}.ckpt"
+    #         if (SaveWeightsOnly == True):
+    #             cp_callback = tf.keras.callbacks.ModelCheckpoint(filepath=CheckpointSavePath,
+    #                                                              monitor='val_categorical_accuracy',
+    #                                                              mode='max',
+    #                                                              save_weights_only=True
+    #                                                              )
+    #         else:
+    #             cp_callback = tf.keras.callbacks.ModelCheckpoint(filepath=CheckpointSavePath,
+    #                                                              monitor='val_categorical_accuracy',
+    #                                                              mode='max',
+    #                                                              save_weights_only=False
+    #                                                              )
+    #     else:
+    #         print("Model save format error")
+    #         return
+    #
+    #     # CheckpointSavePath = str(config.ResultSavePath) +"\\" +ModelName + "\\" + "{epoch:02d}-{val_categorical_accuracy:.2f}.ckpt"
+    #     # cp_callback = tf.keras.callbacks.ModelCheckpoint(filepath=CheckpointSavePath,
+    #     #                                                  monitor='val_categorical_accuracy',
+    #     #                                                  mode='max',
+    #     #                                                  save_weights_only=True
+    #     #                                                  )
+    #     history = MODEL.fit(
+    #         TrainData[0],
+    #         validation_data=TrainData[1],
+    #         steps_per_epoch=None,
+    #         epochs=EPOCHES,
+    #         verbose=1,
+    #         # validation_split=0.1,
+    #         validation_freq=1,
+    #         callbacks=[cp_callback],
+    #         workers=4
+    #     )
+    # # ValueError: `validation_split` is only supported for Tensors or NumPy arrays, found following types in the input: [<class 'tensorflow.python.data.ops.dataset_ops.BatchDataset'>]
+    #
+    # MODEL.summary()
+
+
 
     if(SaveFigure == True):
         pltsave_str = str(config.ResultSavePath) + "\\" +ModelName + "\\Loss_and_Accuracy.png"
