@@ -4,6 +4,7 @@
 # @Author  : name
 # @File    : run.py
 
+import numpy as np
 
 import Src.PathConfig as config
 import Src.Model.ResNet34 as Res34
@@ -21,8 +22,8 @@ train_BatchDataset = tf.keras.utils.image_dataset_from_directory(
     label_mode='categorical',
     batch_size=8,
     image_size=(128,128),
-    shuffle=True,
-    seed = ModelPara.SEED,  # 随机种子 between 0 and 2**32-1
+    shuffle=False,
+    # seed = ModelPara.SEED,  # 随机种子 between 0 and 2**32-1
     # shuffle=False,
     subset='both',
     validation_split=0.1,    # 十折交叉验证
@@ -63,6 +64,12 @@ def ModelFit(EPOCHES,ModelName = "UndefinedModel",MODEL = Res34,TrainData = trai
     else:
         pathlib.Path(str(config.ResultSavePath) + f"\\{ModelName}").mkdir()
 
+    CheckpointSavePath = str(config.ResultSavePath) + f"\\{ModelName}" + "\\" + "Model.ckpt"
+    cp_callback = tf.keras.callbacks.ModelCheckpoint(filepath=CheckpointSavePath,
+            monitor='val_categorical_accuracy',
+            mode='max',
+            save_weights_only=True
+        )
     history = MODEL.fit(
             TrainData[0],
             validation_data = TrainData[1],
@@ -70,32 +77,30 @@ def ModelFit(EPOCHES,ModelName = "UndefinedModel",MODEL = Res34,TrainData = trai
             epochs=EPOCHES,
             verbose=1,
             validation_freq=1,
+            callbacks=[cp_callback],
             workers=4,
         )
 
-    SavePath = str(config.ResultSavePath) + f"\\{ModelName}" + "\\" + "Model.ckpt"
-    MODEL.save(SavePath)
+    # SavePath = str(config.ResultSavePath) + f"\\{ModelName}" + "\\" + "Model.ckpt"
+    # MODEL.save(SavePath)
 
     result = MODEL.predict(test_BatchDataset, workers=4, use_multiprocessing=True)
+    '''
+    因为模型是10分类，故返回结果则是一个1*10的向量，其中每列的值表示该图像属于该类的概率；
+    result维度：传入图像数（18000）*分类数目（10）
+    '''
 
     # 提取真实标签
     true_labels = tf.concat([y for x, y in test_BatchDataset], axis=0)
-    print(true_labels)
-    print(type(true_labels))
-    # 将预测结果转换为类别标签
-    predicted_labels = tf.argmax(result, axis=1)
-    print(predicted_labels)
-    print(type(predicted_labels))
 
-    # print(result)
-    # print(type(result))
-    # print('ndarray的维度: ', result.ndim)
-    # print('ndarray的形状: ', result.shape)
-    # print('ndarray的元素数量: ', result.size)
-    # print('ndarray中的数据类型: ', result.dtype)
-    # for i in range(0,18000,1):
-    #     index = result[i].argmax()
-    #     print(class_name[index])
+    accuracy = tf.keras.metrics.CategoricalAccuracy()
+    accuracy.update_state(true_labels,result)
+    print(f"准确率：{accuracy.result()}")
+
+    with open(str(config.ResultSavePath) + "\\" +ModelName +"\\PredictResult.txt","w") as file:
+        file.write("准确率：\n")
+        # file.write(str(count/result.size))
+        file.write(str(np.array(accuracy.result())))
 
 
     # if(SaveModel == False):

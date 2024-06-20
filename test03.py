@@ -23,7 +23,8 @@ train_BatchDataset = tf.keras.utils.image_dataset_from_directory(
     image_size=(128,128)
 )
 
-model = tf.keras.models.load_model(Model,filepath = r'E:\code\githubWorkSpace\ImageClassification-ResNet34\result\UndefinedModel\Model.ckpt')
+Model.load_weights(r'E:\code\githubWorkSpace\ImageClassification-ResNet34\result\Res34_TrainData100\50-0.67.h5')
+# model = tf.keras.Model.load_weights(r'E:\code\githubWorkSpace\ImageClassification-ResNet34\result\Res34_TrainData100\50-0.67.h5')
 
 
 
