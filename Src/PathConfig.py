@@ -18,7 +18,7 @@ import pathlib
 ProjectPath = pathlib.Path(r"E:\code\githubWorkSpace\ImageClassification-ResNet34")
 
 DatasetPath = pathlib.Path(str(ProjectPath) + "\\dataset")
-TrainDataPath = pathlib.Path(str(DatasetPath) + "\\train100")
+TrainDataPath = pathlib.Path(str(DatasetPath) + "\\train50")
 TestDataPath = pathlib.Path(str(DatasetPath) + "\\test")
 ValidationDataPath = pathlib.Path(str(DatasetPath) + "\\validation")
 

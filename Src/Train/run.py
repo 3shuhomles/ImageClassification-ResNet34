@@ -20,10 +20,10 @@ train_BatchDataset = tf.keras.utils.image_dataset_from_directory(
     config.TrainDataPath,
     labels='inferred',
     label_mode='categorical',
-    batch_size=8,
+    batch_size=32,
     image_size=(128,128),
-    shuffle=False,
-    # seed = ModelPara.SEED,  # 随机种子 between 0 and 2**32-1
+    shuffle=True,
+    seed = ModelPara.SEED,  # 随机种子 between 0 and 2**32-1
     # shuffle=False,
     subset='both',
     validation_split=0.1,    # 十折交叉验证
@@ -38,8 +38,9 @@ test_BatchDataset = tf.keras.utils.image_dataset_from_directory(
         config.TestDataPath,
         labels='inferred',
         label_mode='categorical',
-        batch_size=8,
-        image_size=(128, 128)
+        batch_size=32,
+        image_size=(128, 128),
+        shuffle=False
     )
 
 class_name = ['beach','circularfarmland','cloud',
@@ -64,12 +65,12 @@ def ModelFit(EPOCHES,ModelName = "UndefinedModel",MODEL = Res34,TrainData = trai
     else:
         pathlib.Path(str(config.ResultSavePath) + f"\\{ModelName}").mkdir()
 
-    CheckpointSavePath = str(config.ResultSavePath) + f"\\{ModelName}" + "\\" + "Model.ckpt"
-    cp_callback = tf.keras.callbacks.ModelCheckpoint(filepath=CheckpointSavePath,
-            monitor='val_categorical_accuracy',
-            mode='max',
-            save_weights_only=True
-        )
+    # CheckpointSavePath = str(config.ResultSavePath) + f"\\{ModelName}" + "\\" + "Model.ckpt"
+    # cp_callback = tf.keras.callbacks.ModelCheckpoint(filepath=CheckpointSavePath,
+    #         monitor='val_categorical_accuracy',
+    #         mode='max',
+    #         save_weights_only=True
+    #     )
     history = MODEL.fit(
             TrainData[0],
             validation_data = TrainData[1],
@@ -77,31 +78,44 @@ def ModelFit(EPOCHES,ModelName = "UndefinedModel",MODEL = Res34,TrainData = trai
             epochs=EPOCHES,
             verbose=1,
             validation_freq=1,
-            callbacks=[cp_callback],
+            # callbacks=[cp_callback],
             workers=4,
         )
 
-    # SavePath = str(config.ResultSavePath) + f"\\{ModelName}" + "\\" + "Model.ckpt"
-    # MODEL.save(SavePath)
 
-    result = MODEL.predict(test_BatchDataset, workers=4, use_multiprocessing=True)
+    #SavePath = str(config.ResultSavePath) + f"\\{ModelName}" + "\\" + "Model"
+    # MODEL.save(SavePath, save_format="h5")
+    # MODEL.save_weights(SavePath, save_format="h5")
+    print(MODEL.to_json())
+    # MODEL.summary()
+    # ModelSavePath = str(config.ResultSavePath) + f"\\{ModelName}" + '\\ModelSave'
+    WeightsSavePath = str(config.ResultSavePath) + f"\\{ModelName}" + '\\WeightsSave'
+    # pathlib.Path(ModelSavePath).mkdir()
+    pathlib.Path(WeightsSavePath).mkdir()
+    # MODEL.save(ModelSavePath, save_format="tf")
+    MODEL.save_weights(WeightsSavePath+ '\\ModelWeights', save_format="h5")
+    # + '\\ModelWeights'
+
+    # result = MODEL.evaluate(test_BatchDataset,return_dict=True)
+    # print(result)
+
+    # 提取真实标签
+    true_labels = tf.concat([y for x, y in test_BatchDataset], axis=0)
+    result = MODEL.predict(test_BatchDataset)
+    # print(result)
     '''
     因为模型是10分类，故返回结果则是一个1*10的向量，其中每列的值表示该图像属于该类的概率；
     result维度：传入图像数（18000）*分类数目（10）
     '''
-
-    # 提取真实标签
-    true_labels = tf.concat([y for x, y in test_BatchDataset], axis=0)
-
     accuracy = tf.keras.metrics.CategoricalAccuracy()
     accuracy.update_state(true_labels,result)
-    print(f"准确率：{accuracy.result()}")
+    print(f"准确率：{accuracy.result().numpy()}")
+    print(accuracy.result().numpy())
 
     with open(str(config.ResultSavePath) + "\\" +ModelName +"\\PredictResult.txt","w") as file:
         file.write("准确率：\n")
         # file.write(str(count/result.size))
         file.write(str(np.array(accuracy.result())))
-
 
     # if(SaveModel == False):
     #     history = MODEL.fit(
